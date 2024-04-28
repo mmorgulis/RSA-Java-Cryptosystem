@@ -18,7 +18,7 @@ public class Keys {
 
 	private String encodedPrivateKey;
 
-	private static final int keyLenght = 3; 
+	private static final int keyLenght = 100; //617 for 2048 bit key
 
 	private BigInteger p;		// first prime
 
@@ -72,16 +72,18 @@ public class Keys {
 		generateKeys();
 	}
 
-	public Keys(BigInteger N, BigInteger r, BigInteger p, BigInteger q, BigInteger s) {
+	public Keys(BigInteger N, BigInteger r, BigInteger p, BigInteger q) {
 		this.publicKey = new BigInteger[2];
 		this.encodedPublicKey = new String[2];
 		this.N = N;
+		this.r = r;
 		this.publicKey[0] = p.multiply(q);
 		this.publicKey[1] = r;
-		this.privateKey = s; 
+		this.phi = (p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE));
+		generatePrivateKey();
 		this.encodedPublicKey[0] = encode(N);
 		this.encodedPublicKey[1] = encode(r);
-		this.encodedPrivateKey = encode(s);
+		this.encodedPrivateKey = encode(privateKey);
 		this.p = p;
 		this.q = q;
 		System.out.println("Your public key is the couple (N, r) = ");
@@ -104,7 +106,6 @@ public class Keys {
 		
 		System.out.println("Your public key is the couple (N, r) = ");
 		System.out.println(encodedPublicKey[0] + ", " + encodedPublicKey[1]);
-		System.out.println();
 		generatePrivateKey();
 		encodedPrivateKey = encode(privateKey);
 		System.out.println("Your private key is: " + encodedPrivateKey);
@@ -117,37 +118,36 @@ public class Keys {
 		Random rnd;
 		do {
 			rnd = new Random();
-			byte[] b = new byte[length];
-			rnd.nextBytes(b);
-			prime = new BigInteger(b);
-			if(isPrime(prime))
+			//prime = BigInteger.probablePrime(length, rnd);
+			prime = new BigInteger(length, 99, rnd);
+			if (isPrime(prime))
 				testPrime = false;
 			else
 				testPrime = true;
-		} while(testPrime);
+		} while (testPrime);
 		return prime;
 	}
-
+	
 	private static boolean isPrime(BigInteger n) {
 		// Corner case
-		if (n.compareTo(BigInteger.ONE) == -1) //n <= 1
+		if (n.compareTo(BigInteger.ONE) == -1) 
 			return false;
-
+	
 		// Check from 2 to sqrt(n)
 		BigInteger i = new BigInteger("2");
-		while (i.compareTo(n.sqrt()) == 1){
-			if (n.mod(i) == BigInteger.ZERO)
+		while (i.compareTo(n.sqrt()) == -1 || i.compareTo(n.sqrt()) == 0) {
+			if (n.mod(i).equals(BigInteger.ZERO))
 				return false;
+			i = i.add(BigInteger.ONE);
 		}
-
 		return true;
 	}
-
+	
 	private void generatePrivateKey(){
 		BigInteger tmpPrivateKey = Division.bezoutIdentity(phi, r);
-		if (tmpPrivateKey.compareTo(BigInteger.ZERO) == -1)
+		if (tmpPrivateKey.compareTo(BigInteger.ZERO) == -1){
 			tmpPrivateKey = tmpPrivateKey.add(phi);
-
+		}
 		privateKey = tmpPrivateKey;
 
 	}
@@ -157,7 +157,7 @@ public class Keys {
 		return encoder.encodeToString(bigIntegerBytes);
 	}
 
-	public void encrypt (String message) {
+	public BigInteger[] encrypt (String message) {
 		// encrypt the message using message^r mod N = encryptedMessage
 		// divide the string in char[] and encrypt every char
 		encryptedMessage = new BigInteger[message.length()];
@@ -168,28 +168,28 @@ public class Keys {
 			intMessage[i] = tmpMessage[i];
 		}
 		BigInteger tmpNumber;
+		BigInteger modular;
 		for (int i = 0; i < intMessage.length; i++) {
-			//System.out.println("calcolo: " + intMessage[i]+ "^" + r + " mod " + N);
-			tmpNumber = BigInteger.valueOf(intMessage[i]);
-			SquareAndMultiply modular = new SquareAndMultiply(tmpNumber, r, N);
-			encryptedMessage[i] = modular.getResult();
+			tmpNumber = BigInteger.valueOf(intMessage[i]);	
+			modular = SquareAndMultiply.modularExponentation(tmpNumber, r, N);
+			encryptedMessage[i] = modular;
 		}
-		
+		return encryptedMessage;
 	}
 
-	public void decrypt (BigInteger[] en) {
-		//System.out.println("calcolo: " + message + "^" + privateKey + " mod " + N);
+	public String decrypt (BigInteger[] en) {
+		
 		decryptedMessage = "";
-		char [] tmpMsg = new char[en.length];
+		char [] tmpMsg = new char[en.length]; //modifica
+		BigInteger exp;
 		for (int i = 0; i < en.length; i++) {
-			SquareAndMultiply exp = new SquareAndMultiply(en[i], privateKey, N);
-			tmpMsg[i] = (char) exp.getResult().intValue();
+			exp = SquareAndMultiply.modularExponentation(en[i], privateKey, N);
+			tmpMsg[i] = (char) exp.intValue();
 		}
 		for (int i = 0; i < en.length; i++) {
 			decryptedMessage += tmpMsg[i];
 		}
-		
-		
+		return decryptedMessage;
 	}
 
 }

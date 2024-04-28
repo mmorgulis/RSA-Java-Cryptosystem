@@ -3,9 +3,9 @@ import java.math.BigInteger;
 import java.util.LinkedHashMap;
 
 public class Division {
+
 	public static Map<Integer, BigInteger> previousCoefficient1;
 	public static Map<Integer, BigInteger> previousCoefficient2;
-	
 
 	public static BigInteger bezoutIdentity(BigInteger phi, BigInteger r) {
 		BigInteger[] bezoutCoeffincient = new BigInteger[3];

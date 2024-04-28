@@ -2,23 +2,8 @@ import java.math.BigInteger;
 
 public class SquareAndMultiply {
 	//efficient resolution for equation like a ^ n mod m
-	private BigInteger a;
-	private BigInteger n;
-	private BigInteger m;
-	private BigInteger result;
 	
-	public BigInteger getResult() {
-		return result;
-	}
-
-	public SquareAndMultiply(BigInteger a, BigInteger n, BigInteger m) {
-		this.a = a;
-		this.n = n;
-		this.m = m;
-		this.result = modularExponentation();
-	}
-	
-	private BigInteger modularExponentation() {
+	public static BigInteger modularExponentation(BigInteger a, BigInteger n, BigInteger m) {
 		//return a.modPow(n, m);
 		String tmp = n.toString(2);
 		int [] binary = new int[tmp.length()];
